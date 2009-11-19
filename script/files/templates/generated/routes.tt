@@ -1,0 +1,11 @@
+# Application Routes
+# All custom routes should now be centralized in this file or similar.
+
+our $r = {};
+
+    #$r = {
+    #    '/' => sub {
+    #        my $s = shift;
+    #        $s->html('Thanks for trying the SweetPea Web Framework!');
+    #    }
+    #};

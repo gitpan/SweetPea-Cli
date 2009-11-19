@@ -1,0 +1,58 @@
+SweetPea-Cli
+
+SweetPea::Cli is the interactive command-line development utility
+intended to replace the original SweetPea application generator script.
+The original application generator script will no longer be packed with
+SweetPea or SweetPea::Application.
+
+AUTOMATED INSTALLATION
+
+	cpan SweetPea::Cli
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Makefile.PL
+	make
+	make test
+	make install
+	
+USAGE
+
+To invoke this application from the command-line, run one of the following
+commands:
+
+	perl -MSweetPea::Cli -e shell
+	or
+	sweetpea
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc SweetPea::Cli
+
+You can also look for information at:
+
+    RT, CPAN's request tracker
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=SweetPea-Cli
+
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/SweetPea-Cli
+
+    CPAN Ratings
+        http://cpanratings.perl.org/d/SweetPea-Cli
+
+    Search CPAN
+        http://search.cpan.org/dist/SweetPea-Cli/
+
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2009 Al Newkirk
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+

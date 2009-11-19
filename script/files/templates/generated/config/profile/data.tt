@@ -1,0 +1,14 @@
+[%s.head%] 
+form: 
+  fields: {}
+  name: ''
+  validation: 
+    constraint_methods: {}
+    optional: []
+    required: []
+grid: 
+  columns: {}
+  name: ''
+table: 
+  columns: {} 
+  name: users

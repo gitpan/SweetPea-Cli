@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+BEGIN {
+  use lib '../lib';
+}
+
+use SweetPea::Cli qw(shell);
+
+=head1 NAME
+
+sweetpea - An all-in-one development utility for SweetPea Packages
+
+=cut
+
+=head1 METHODS
+
+=head2 shell
+
+    Runs the interactive command-line development application
+
+=cut
+
+shell();
+
+=head1 AUTHOR
+
+Al Newkirk, C<< <al.newkirk at awnstudio.com> >>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2009 Al Newkirk, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
+
+# End

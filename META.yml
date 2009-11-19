@@ -1,0 +1,38 @@
+---
+abstract: 'Rapid Application Development for SweetPea Packages'
+author:
+  - 'Al Newkirk, C<< <al.newkirk at awnstudio.com> >>'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+  Test::More: 0.42
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 0.91'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: SweetPea-Cli
+no_index:
+  directory:
+    - inc
+    - script/files
+    - t
+  package:
+    - App::Rad
+    - Module::Install
+requires:
+  Cwd: 0
+  Exception::Handler: 0
+  File::ShareDir: 0
+  File::Util: 0
+  Hash::Merge::Simple: 0
+  SweetPea: 2.364
+  SweetPea::Application: 0.022
+  Template: 0
+  Test/Differences: 0
+  perl: 5.6.0
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.02
