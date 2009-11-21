@@ -27,7 +27,9 @@ requires:
   Exception::Handler: 0
   File::ShareDir: 0
   File::Util: 0
+  HTTP::Server::Simple: 0
   Hash::Merge::Simple: 0
+  IO: 0
   SweetPea: 2.364
   SweetPea::Application: 0.022
   Template: 0
@@ -35,4 +37,4 @@ requires:
   perl: 5.6.0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.02
+version: 0.03

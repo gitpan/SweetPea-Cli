@@ -9,6 +9,9 @@ use inc::Module::Install;
 # installs dependencies
 recommends      'SweetPea'               => '2.363';
 recommends      'SweetPea::Application'  => '0';
+recommends      'SweetPea::Cli'          => '0';
+recommends      'IO'                     => '0';
+recommends      'HTTP::Server::Simple'   => '0';
 test_requires   'Test::More'             => '0.42';
 
 #requires       'SomeModule::YouNeed'    => '0';

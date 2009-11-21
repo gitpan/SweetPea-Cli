@@ -1,0 +1,123 @@
+#![%s.shebang%]
+
+BEGIN
+{
+   use FindBin;
+   use lib $FindBin::Bin . '/sweet';
+   use lib $FindBin::Bin . '/sweet/application';
+   use lib $FindBin::Bin . '/sweet/modules';
+}
+{
+
+   package Sweetie;
+
+   use SweetPea::Application;
+   use HTTP::Server::Simple::CGI;
+   use IO::File;
+   use base qw(HTTP::Server::Simple::CGI);
+   require 'routes.pl' if -e 'routes.pl';
+   use constant {
+      ok  => "HTTP/1.0 200 OK\r\n",
+      na  => "HTTP/1.0 404 NOT FOUND\r\n",
+      bad => "HTTP/1.0 500 ERROR\r\n"
+   };
+   
+   sub handle_request
+   {
+      my ($ref, $cgi) = @_;
+      
+      # static request
+      if ($ENV{PATH_INFO} =~ /^\/static/) {
+         my  $ext = $1 if $ENV{PATH_INFO} =~ /(\.\w+$)/;
+         my $ctype = "";
+            $ctype = "text/plain"      if $ext eq ".txt";
+            $ctype = "text/html"       if $ext eq ".html" ||
+                                          $ext eq ".htm";
+            $ctype = "image/gif"       if $ext eq ".gif";
+            $ctype = "image/png"       if $ext eq ".png";
+            $ctype = "image/jpg"       if $ext eq ".jpg" ||
+                                          $ext eq ".jpeg";
+            $ctype = "application/pdf" if $ext eq ".pdf";
+            
+         if (-e ".$ENV{PATH_INFO}") {
+            print ok;
+            print $cgi->header(
+               -type   => $ctype,
+               -status => 200,
+            );
+            my $fh = new IO::File "< .$ENV{PATH_INFO}";
+            if (defined $fh) {
+               $fh->binmode if $ctype =~ /^image/;
+               print <$fh>;
+               $fh->close;
+            }
+         }
+         else {
+            warn "$ENV{PATH_INFO} is being requested but does not exist.";
+            print na;
+            print $cgi->header(
+               -type   => 'text/html',
+               -status => 404,
+            );
+            print "File Not Found!";
+         }
+         return 1;
+      }
+      
+      # dynamic request
+      my $processing = 1;
+      my @return     = ();
+      do
+      {
+         # prepare application
+         my $self = sweet({ local_sessions => 1 });
+         my $app = $self->{store}->{application};
+            $self->routes($r) if $r;
+   
+         # set up mock runtime environment
+         $app->{mock_run}  = 1;
+         $app->{mock_data} = [];
+         $app->{test}->{route} = $ENV{SCRIPT_NAME} = '/.pl';
+   
+         # run application
+         $self->run;
+   
+         push @{ $app->{mock_data} }, @{ $self->html };
+            
+         @return = @{ $app->{mock_data} };
+         
+         $app->{mock_run}      = 0;
+         $app->{mock_data}     = [];
+         
+         # check for redirect
+         if ($return[0] =~ m/^Attempted to redirect to url (.*)\./i) {
+            $ENV{PATH_INFO} = $1;
+            $self->cgi->path_info($1);
+         }
+         else {
+            $processing = 0;
+            print ok;
+            print $self->cgi->header(
+               -type   => $self->application->{content_type},
+               -status => 200,
+               -cookie => $self->cookies
+            );
+            print "@return";
+         }
+         
+      } while ($processing);
+      
+      # cleanup - destroy objects for memorys-sake
+      undef $processing;
+      undef @return;
+   }
+   
+}
+END
+{
+   
+}
+
+# start the server on port 8080
+my $pid = Sweetie->new(8080)->run();
+print "Use 'kill $pid' or ctrl+c to stop server.\n";

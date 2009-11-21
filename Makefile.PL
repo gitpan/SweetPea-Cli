@@ -12,6 +12,8 @@ requires       'Test/Differences'       => '0';
 requires       'File::ShareDir'         => '0';
 requires       'File::Util'             => '0';
 requires       'Template'               => '0';
+requires       'IO'                     => '0';
+requires       'HTTP::Server::Simple'   => '0';
 requires       'SweetPea'               => '2.364';
 requires       'SweetPea::Application'  => '0.022';
 

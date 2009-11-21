@@ -115,6 +115,11 @@ sub script {
     # make files
     $self->_write(0755, '.htaccess', 'generated/htaccess.tt');
     $self->_write(0755, '.pl', 'generated/script/pl.tt');
+    $self->_write(0754, '.server', 'generated/server.tt');
+    $self->_write(0755, 'routes.pl', 'generated/routes.tt');
+    $self->_write(0754, 'extras/Makefile.PL', 'generated/makefile.tt');
+    $self->_write(0754, 'extras/TODO', 'placeholder');
+    $self->_write(0754, 'extras/Changes', 'placeholder');
     
     return $f->flash(@return)->report($c);
 }
@@ -129,6 +134,7 @@ sub basic {
     # make files
     $self->_write(0755, '.htaccess', 'generated/htaccess.tt');
     $self->_write(0755, '.pl', 'generated/basic/pl.tt');
+    $self->_write(0754, '.server', 'generated/server.tt');
     $self->_write(0755, 'routes.pl', 'generated/routes.tt');
     $self->_write(0754, 'sweet/application/Controller/Root.pm', 'generated/controller/root.tt');
     $self->_write(0754, 'sweet/application/Controller/Sweet.pm', 'generated/controller/basic/sweet.tt');
@@ -155,6 +161,7 @@ sub stack {
     $self->_write(0755, '.htaccess', 'generated/htaccess.tt');
     $self->_write(0755, '.pl', 'generated/stack/pl.tt');
     $self->_write(0755, 'routes.pl', 'generated/routes.tt');
+    $self->_write(0754, '.server', 'generated/server.tt');
     $self->_write(0754, 'sweet/application/Controller/Root.pm', 'generated/controller/root.tt');
     $self->_write(0754, 'sweet/application/Controller/Sweet.pm', 'generated/controller/stack/sweet.tt');
     $self->_write(0754, 'sweet/application/Model/Schema.pm', 'generated/model/schema.tt');

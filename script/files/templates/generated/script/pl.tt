@@ -6,17 +6,7 @@ require 'routes.pl' if -e 'routes.pl';
 # weightless application
 
 my  $s = sweet;
-    $s->routes({
-        
-        '/:url' => sub {
-            my $s = shift;
-            
-            $s->html("<h1>SweetPea is alive and well</h1>");
-            $s->html("You passed an inline url param: " . $s->param('url') )
-            if $s->param('url');
-        }
-        
-    });
+    $s->routes($r) if $r;
     
     exit $s->run if $s->request_method;
     

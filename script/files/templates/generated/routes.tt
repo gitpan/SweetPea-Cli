@@ -3,9 +3,12 @@
 
 our $r = {};
 
-    #$r = {
-    #    '/' => sub {
-    #        my $s = shift;
-    #        $s->html('Thanks for trying the SweetPea Web Framework!');
-    #    }
-    #};
+    $r = {
+        '/:url' => sub {
+            my $s = shift;
+            
+            $s->html("<h1>SweetPea is alive and well</h1>");
+            $s->html("You passed an inline url param: " . $s->param('url') )
+            if $s->param('url');
+        }
+    };

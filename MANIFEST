@@ -48,6 +48,7 @@ script/files/templates/documents/help/menu_help.tt
 script/files/templates/documents/help/mvc_help.tt
 script/files/templates/documents/help/quit_help.tt
 script/files/templates/generated/app.tt
+script/files/templates/generated/server.tt
 script/files/templates/generated/basic/pl.tt
 script/files/templates/generated/config/application.tt
 script/files/templates/generated/config/datastores.tt
