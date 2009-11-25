@@ -2,6 +2,8 @@ DirectoryIndex .pl
 AddHandler cgi-script .pl .pm .cgi
 Options +ExecCGI +FollowSymLinks -Indexes
 
+RedirectMatch 301 ^/sweet/.*$ /
+
 RewriteEngine On
 RewriteCond %{SCRIPT_FILENAME} !-d
 RewriteCond %{SCRIPT_FILENAME} !-f
