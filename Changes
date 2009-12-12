@@ -1,5 +1,6 @@
 Revision history for SweetPea-Cli
 
-0.01    11/11/09 6:45pm
-        First version, released on an unsuspecting world.
-
+0.05    Sun Dec 06 12:35:00 2009 
+        server static redirect fix
+0.06    Sat Dec 12 09:42:36 2009 
+        new http server

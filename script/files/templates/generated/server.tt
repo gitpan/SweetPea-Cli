@@ -6,7 +6,12 @@ BEGIN
    use lib $FindBin::Bin . '/sweet';
    use lib $FindBin::Bin . '/sweet/application';
    use lib $FindBin::Bin . '/sweet/modules';
-}
+   
+   # .server arguments
+   our  ($http_port, $auto_update) = @ARGV;
+   warn "Auto-Update ON, code files will be reloaded!" if $auto_update;
+   $http_port = 8080 if !$http_port;
+}  
 {
 
    package Sweetie;
@@ -16,11 +21,650 @@ BEGIN
    use IO::File;
    use base qw(HTTP::Server::Simple::CGI);
    require 'routes.pl' if -e 'routes.pl';
+   
+   # http headers
    use constant {
-      ok  => "HTTP/1.0 200 OK\r\n",
-      na  => "HTTP/1.0 404 NOT FOUND\r\n",
-      bad => "HTTP/1.0 500 ERROR\r\n"
+      OK       => "HTTP/1.0 200 OK\r\n",
+      MOVED    => "HTTP/1.0 302 MOVED\r\n",
+      NOTFOUND => "HTTP/1.0 404 NOT FOUND\r\n",
+      ERROR    => "HTTP/1.0 500 ERROR\r\n"
    };
+   
+   # mime-type specifications
+   my $mime_types = {
+       "application/andrew-inset"           => [qw(ez)],
+       "application/applixware"             => [qw(aw)],
+       "application/atom+xml"               => [qw(atom)],
+       "application/atomcat+xml"            => [qw(atomcat)],
+       "application/atomsvc+xml"            => [qw(atomsvc)],
+       "application/ccxml+xml"              => [qw(ccxml)],
+       "application/cu-seeme"               => [qw(cu)],
+       "application/davmount+xml"           => [qw(davmount)],
+       "application/ecmascript"             => [qw(ecma)],
+       "application/emma+xml"               => [qw(emma)],
+       "application/epub+zip"               => [qw(epub)],
+       "application/font-tdpfr"             => [qw(pfr)],
+       "application/hyperstudio"            => [qw(stk)],
+       "application/java-archive"           => [qw(jar)],
+       "application/java-serialized-object" => [qw(ser)],
+       "application/java-vm"                => [qw(class)],
+       "application/javascript"             => [qw(js)],
+       "application/json"                   => [qw(json)],
+       "application/lost+xml"               => [qw(lostxml)],
+       "application/mac-binhex40"           => [qw(hqx)],
+       "application/mac-compactpro"         => [qw(cpt)],
+       "application/marc"                   => [qw(mrc)],
+       "application/mathematica"            => [qw(ma nb mb)],
+       "application/mathml+xml"             => [qw(mathml)],
+       "application/mbox"                   => [qw(mbox)],
+       "application/mediaservercontrol+xml" => [qw(mscml)],
+       "application/mp4"                    => [qw(mp4s)],
+       "application/msword"                 => [qw(doc dot)],
+       "application/mxf"                    => [qw(mxf)],
+       "application/octet-stream" =>
+         [qw(bin dms lha lrf lzh so iso dmg dist distz pkg bpk dump elc)],
+       "application/oda"                     => [qw(oda)],
+       "application/oebps-package+xml"       => [qw(opf)],
+       "application/ogg"                     => [qw(ogx)],
+       "application/onenote"                 => [qw(onetoc onetoc2 onetmp onepkg)],
+       "application/patch-ops-error+xml"     => [qw(xer)],
+       "application/pdf"                     => [qw(pdf)],
+       "application/pgp-encrypted"           => [qw(pgp)],
+       "application/pgp-signature"           => [qw(asc sig)],
+       "application/pics-rules"              => [qw(prf)],
+       "application/pkcs10"                  => [qw(p10)],
+       "application/pkcs7-mime"              => [qw(p7m p7c)],
+       "application/pkcs7-signature"         => [qw(p7s)],
+       "application/pkix-cert"               => [qw(cer)],
+       "application/pkix-crl"                => [qw(crl)],
+       "application/pkix-pkipath"            => [qw(pkipath)],
+       "application/pkixcmp"                 => [qw(pki)],
+       "application/pls+xml"                 => [qw(pls)],
+       "application/postscript"              => [qw(ai eps ps)],
+       "application/prs.cww"                 => [qw(cww)],
+       "application/rdf+xml"                 => [qw(rdf)],
+       "application/reginfo+xml"             => [qw(rif)],
+       "application/relax-ng-compact-syntax" => [qw(rnc)],
+       "application/resource-lists+xml"      => [qw(rl)],
+       "application/resource-lists-diff+xml" => [qw(rld)],
+       "application/rls-services+xml"        => [qw(rs)],
+       "application/rsd+xml"                 => [qw(rsd)],
+       "application/rss+xml"                 => [qw(rss)],
+       "application/rtf"                     => [qw(rtf)],
+       "application/sbml+xml"                => [qw(sbml)],
+       "application/scvp-cv-request"         => [qw(scq)],
+       "application/scvp-cv-response"        => [qw(scs)],
+       "application/scvp-vp-request"         => [qw(spq)],
+       "application/scvp-vp-response"        => [qw(spp)],
+       "application/sdp"                     => [qw(sdp)],
+       "application/set-payment-initiation"  => [qw(setpay)],
+       "application/set-registration-initiation" => [qw(setreg)],
+       "application/shf+xml"                     => [qw(shf)],
+       "application/smil+xml"                    => [qw(smi smil)],
+       "application/sparql-query"                => [qw(rq)],
+       "application/sparql-results+xml"          => [qw(srx)],
+       "application/srgs"                        => [qw(gram)],
+       "application/srgs+xml"                    => [qw(grxml)],
+       "application/ssml+xml"                    => [qw(ssml)],
+       "application/vnd.3gpp.pic-bw-large"       => [qw(plb)],
+       "application/vnd.3gpp.pic-bw-small"       => [qw(psb)],
+       "application/vnd.3gpp.pic-bw-var"         => [qw(pvb)],
+       "application/vnd.3gpp2.tcap"              => [qw(tcap)],
+       "application/vnd.3m.post-it-notes"        => [qw(pwn)],
+       "application/vnd.accpac.simply.aso"       => [qw(aso)],
+       "application/vnd.accpac.simply.imp"       => [qw(imp)],
+       "application/vnd.acucobol"                => [qw(acu)],
+       "application/vnd.acucorp"                 => [qw(atc acutc)],
+       "application/vnd.adobe.air-application-installer-package+zip" => [qw(air)],
+       "application/vnd.adobe.xdp+xml"                               => [qw(xdp)],
+       "application/vnd.adobe.xfdf"                                  => [qw(xfdf)],
+       "application/vnd.airzip.filesecure.azf"                       => [qw(azf)],
+       "application/vnd.airzip.filesecure.azs"                       => [qw(azs)],
+       "application/vnd.amazon.ebook"                                => [qw(azw)],
+       "application/vnd.americandynamics.acc"                        => [qw(acc)],
+       "application/vnd.amiga.ami"                                   => [qw(ami)],
+       "application/vnd.android.package-archive"                     => [qw(apk)],
+       "application/vnd.anser-web-certificate-issue-initiation"      => [qw(cii)],
+       "application/vnd.anser-web-funds-transfer-initiation"         => [qw(fti)],
+       "application/vnd.antix.game-component"                        => [qw(atx)],
+       "application/vnd.apple.installer+xml"                         => [qw(mpkg)],
+       "application/vnd.arastra.swi"                                 => [qw(swi)],
+       "application/vnd.audiograph"                                  => [qw(aep)],
+       "application/vnd.blueice.multipass"                           => [qw(mpm)],
+       "application/vnd.bmi"                                         => [qw(bmi)],
+       "application/vnd.businessobjects"                             => [qw(rep)],
+       "application/vnd.chemdraw+xml"               => [qw(cdxml)],
+       "application/vnd.chipnuts.karaoke-mmd"       => [qw(mmd)],
+       "application/vnd.cinderella"                 => [qw(cdy)],
+       "application/vnd.claymore"                   => [qw(cla)],
+       "application/vnd.clonk.c4group"              => [qw(c4g c4d c4f c4p c4u)],
+       "application/vnd.commonspace"                => [qw(csp cst)],
+       "application/vnd.contact.cmsg"               => [qw(cdbcmsg)],
+       "application/vnd.cosmocaller"                => [qw(cmc)],
+       "application/vnd.crick.clicker"              => [qw(clkx)],
+       "application/vnd.crick.clicker.keyboard"     => [qw(clkk)],
+       "application/vnd.crick.clicker.palette"      => [qw(clkp)],
+       "application/vnd.crick.clicker.template"     => [qw(clkt)],
+       "application/vnd.crick.clicker.wordbank"     => [qw(clkw)],
+       "application/vnd.criticaltools.wbs+xml"      => [qw(wbs)],
+       "application/vnd.ctc-posml"                  => [qw(pml)],
+       "application/vnd.cups-ppd"                   => [qw(ppd)],
+       "application/vnd.curl.car"                   => [qw(car)],
+       "application/vnd.curl.pcurl"                 => [qw(pcurl)],
+       "application/vnd.data-vision.rdz"            => [qw(rdz)],
+       "application/vnd.denovo.fcselayout-link"     => [qw(fe_launch)],
+       "application/vnd.dna"                        => [qw(dna)],
+       "application/vnd.dolby.mlp"                  => [qw(mlp)],
+       "application/vnd.dpgraph"                    => [qw(dpg)],
+       "application/vnd.dreamfactory"               => [qw(dfac)],
+       "application/vnd.dynageo"                    => [qw(geo)],
+       "application/vnd.ecowin.chart"               => [qw(mag)],
+       "application/vnd.enliven"                    => [qw(nml)],
+       "application/vnd.epson.esf"                  => [qw(esf)],
+       "application/vnd.epson.msf"                  => [qw(msf)],
+       "application/vnd.epson.quickanime"           => [qw(qam)],
+       "application/vnd.epson.salt"                 => [qw(slt)],
+       "application/vnd.epson.ssf"                  => [qw(ssf)],
+       "application/vnd.eszigno3+xml"               => [qw(es3 et3)],
+       "application/vnd.ezpix-album"                => [qw(ez2)],
+       "application/vnd.ezpix-package"              => [qw(ez3)],
+       "application/vnd.fdf"                        => [qw(fdf)],
+       "application/vnd.fdsn.mseed"                 => [qw(mseed)],
+       "application/vnd.fdsn.seed"                  => [qw(seed dataless)],
+       "application/vnd.flographit"                 => [qw(gph)],
+       "application/vnd.fluxtime.clip"              => [qw(ftc)],
+       "application/vnd.framemaker"                 => [qw(fm frame maker book)],
+       "application/vnd.frogans.fnc"                => [qw(fnc)],
+       "application/vnd.frogans.ltf"                => [qw(ltf)],
+       "application/vnd.fsc.weblaunch"              => [qw(fsc)],
+       "application/vnd.fujitsu.oasys"              => [qw(oas)],
+       "application/vnd.fujitsu.oasys2"             => [qw(oa2)],
+       "application/vnd.fujitsu.oasys3"             => [qw(oa3)],
+       "application/vnd.fujitsu.oasysgp"            => [qw(fg5)],
+       "application/vnd.fujitsu.oasysprs"           => [qw(bh2)],
+       "application/vnd.fujixerox.ddd"              => [qw(ddd)],
+       "application/vnd.fujixerox.docuworks"        => [qw(xdw)],
+       "application/vnd.fujixerox.docuworks.binder" => [qw(xbd)],
+       "application/vnd.fuzzysheet"                 => [qw(fzs)],
+       "application/vnd.genomatix.tuxedo"           => [qw(txd)],
+       "application/vnd.geogebra.file"              => [qw(ggb)],
+       "application/vnd.geogebra.tool"              => [qw(ggt)],
+       "application/vnd.geometry-explorer"          => [qw(gex gre)],
+       "application/vnd.gmx"                        => [qw(gmx)],
+       "application/vnd.google-earth.kml+xml"       => [qw(kml)],
+       "application/vnd.google-earth.kmz"           => [qw(kmz)],
+       "application/vnd.grafeq"                     => [qw(gqf gqs)],
+       "application/vnd.groove-account"             => [qw(gac)],
+       "application/vnd.groove-help"                => [qw(ghf)],
+       "application/vnd.groove-identity-message"    => [qw(gim)],
+       "application/vnd.groove-injector"            => [qw(grv)],
+       "application/vnd.groove-tool-message"        => [qw(gtm)],
+       "application/vnd.groove-tool-template"       => [qw(tpl)],
+       "application/vnd.groove-vcard"               => [qw(vcg)],
+       "application/vnd.handheld-entertainment+xml" => [qw(zmm)],
+       "application/vnd.hbci"                       => [qw(hbci)],
+       "application/vnd.hhe.lesson-player"          => [qw(les)],
+       "application/vnd.hp-hpgl"                    => [qw(hpgl)],
+       "application/vnd.hp-hpid"                    => [qw(hpid)],
+       "application/vnd.hp-hps"                     => [qw(hps)],
+       "application/vnd.hp-jlyt"                    => [qw(jlt)],
+       "application/vnd.hp-pcl"                     => [qw(pcl)],
+       "application/vnd.hp-pclxl"                   => [qw(pclxl)],
+       "application/vnd.hydrostatix.sof-data"       => [qw(sfd)],
+       "application/vnd.hzn-3d-crossword-hdstx"     => [qw(x3d)],
+       "application/vnd.ibm.minipay"             => [qw(mpy)],
+       "application/vnd.ibm.modcap"              => [qw(afp listafp list3820)],
+       "application/vnd.ibm.rights-management"   => [qw(irm)],
+       "application/vnd.ibm.secure-container"    => [qw(sc)],
+       "application/vnd.iccprofile"              => [qw(icc icm)],
+       "application/vnd.igloader"                => [qw(igl)],
+       "application/vnd.immervision-ivp"         => [qw(ivp)],
+       "application/vnd.immervision-ivu"         => [qw(ivu)],
+       "application/vnd.intercon.formnet"        => [qw(xpw xpx)],
+       "application/vnd.intu.qbo"                => [qw(qbo)],
+       "application/vnd.intu.qfx"                => [qw(qfx)],
+       "application/vnd.ipunplugged.rcprofile"   => [qw(rcprofile)],
+       "application/vnd.irepository.package+xml" => [qw(irp)],
+       "application/vnd.is-xpr"                  => [qw(xpr)],
+       "application/vnd.jam"                     => [qw(jam)],
+       "application/vnd.jcp.javame.midlet-rms"   => [qw(rms)],
+       "application/vnd.jisp"                    => [qw(jisp)],
+       "application/vnd.joost.joda-archive"      => [qw(joda)],
+       "application/vnd.kahootz"                 => [qw(ktz ktr)],
+       "application/vnd.kde.karbon"              => [qw(karbon)],
+       "application/vnd.kde.kchart"              => [qw(chrt)],
+       "application/vnd.kde.kformula"            => [qw(kfo)],
+       "application/vnd.kde.kivio"               => [qw(flw)],
+       "application/vnd.kde.kontour"             => [qw(kon)],
+       "application/vnd.kde.kpresenter"          => [qw(kpr kpt)],
+       "application/vnd.kde.kspread"             => [qw(ksp)],
+       "application/vnd.kde.kword"               => [qw(kwd kwt)],
+       "application/vnd.kenameaapp"              => [qw(htke)],
+       "application/vnd.kidspiration"            => [qw(kia)],
+       "application/vnd.kinar"                   => [qw(kne knp)],
+       "application/vnd.koan"                    => [qw(skp skd skt skm)],
+       "application/vnd.kodak-descriptor"        => [qw(sse)],
+       "application/vnd.llamagraphics.life-balance.desktop"      => [qw(lbd)],
+       "application/vnd.llamagraphics.life-balance.exchange+xml" => [qw(lbe)],
+       "application/vnd.lotus-1-2-3"                             => [qw(123)],
+       "application/vnd.lotus-approach"                          => [qw(apr)],
+       "application/vnd.lotus-freelance"                         => [qw(pre)],
+       "application/vnd.lotus-notes"                             => [qw(nsf)],
+       "application/vnd.lotus-organizer"                         => [qw(org)],
+       "application/vnd.lotus-screencam"                         => [qw(scm)],
+       "application/vnd.lotus-wordpro"                           => [qw(lwp)],
+       "application/vnd.macports.portpkg"                        => [qw(portpkg)],
+       "application/vnd.mcd"                                     => [qw(mcd)],
+       "application/vnd.medcalcdata"                             => [qw(mc1)],
+       "application/vnd.mediastation.cdkey"                      => [qw(cdkey)],
+       "application/vnd.mfer"                                    => [qw(mwf)],
+       "application/vnd.mfmp"                                    => [qw(mfm)],
+       "application/vnd.micrografx.flo"                          => [qw(flo)],
+       "application/vnd.micrografx.igx"                          => [qw(igx)],
+       "application/vnd.mif"                                     => [qw(mif)],
+       "application/vnd.mobius.daf"                              => [qw(daf)],
+       "application/vnd.mobius.dis"                              => [qw(dis)],
+       "application/vnd.mobius.mbk"                              => [qw(mbk)],
+       "application/vnd.mobius.mqy"                              => [qw(mqy)],
+       "application/vnd.mobius.msl"                              => [qw(msl)],
+       "application/vnd.mobius.plc"                              => [qw(plc)],
+       "application/vnd.mobius.txf"                              => [qw(txf)],
+       "application/vnd.mophun.application"                      => [qw(mpn)],
+       "application/vnd.mophun.certificate"                      => [qw(mpc)],
+       "application/vnd.mozilla.xul+xml"                         => [qw(xul)],
+       "application/vnd.ms-artgalry"                             => [qw(cil)],
+       "application/vnd.ms-asf"                                  => [qw(asf)],
+       "application/vnd.ms-cab-compressed"                       => [qw(cab)],
+       "application/vnd.ms-excel" => [qw(xls xlm xla xlc xlt xlw)],
+       "application/vnd.ms-excel.addin.macroenabled.12"        => [qw(xlam)],
+       "application/vnd.ms-excel.sheet.binary.macroenabled.12" => [qw(xlsb)],
+       "application/vnd.ms-excel.sheet.macroenabled.12"        => [qw(xlsm)],
+       "application/vnd.ms-excel.template.macroenabled.12"     => [qw(xltm)],
+       "application/vnd.ms-fontobject"                         => [qw(eot)],
+       "application/vnd.ms-htmlhelp"                           => [qw(chm)],
+       "application/vnd.ms-ims"                                => [qw(ims)],
+       "application/vnd.ms-lrm"                                => [qw(lrm)],
+       "application/vnd.ms-pki.seccat"                         => [qw(cat)],
+       "application/vnd.ms-pki.stl"                            => [qw(stl)],
+       "application/vnd.ms-powerpoint"                       => [qw(ppt pps pot)],
+       "application/vnd.ms-powerpoint.addin.macroenabled.12" => [qw(ppam)],
+       "application/vnd.ms-powerpoint.presentation.macroenabled.12" => [qw(pptm)],
+       "application/vnd.ms-powerpoint.slide.macroenabled.12"        => [qw(sldm)],
+       "application/vnd.ms-powerpoint.slideshow.macroenabled.12"    => [qw(ppsm)],
+       "application/vnd.ms-powerpoint.template.macroenabled.12"     => [qw(potm)],
+       "application/vnd.ms-project"                       => [qw(mpp mpt)],
+       "application/vnd.ms-word.document.macroenabled.12" => [qw(docm)],
+       "application/vnd.ms-word.template.macroenabled.12" => [qw(dotm)],
+       "application/vnd.ms-works"                         => [qw(wps wks wcm wdb)],
+       "application/vnd.ms-wpl"                           => [qw(wpl)],
+       "application/vnd.ms-xpsdocument"                   => [qw(xps)],
+       "application/vnd.mseq"                             => [qw(mseq)],
+       "application/vnd.musician"                         => [qw(mus)],
+       "application/vnd.muvee.style"                      => [qw(msty)],
+       "application/vnd.neurolanguage.nlu"                => [qw(nlu)],
+       "application/vnd.noblenet-directory"               => [qw(nnd)],
+       "application/vnd.noblenet-sealer"                  => [qw(nns)],
+       "application/vnd.noblenet-web"                     => [qw(nnw)],
+       "application/vnd.nokia.n-gage.data"                => [qw(ngdat)],
+       "application/vnd.nokia.n-gage.symbian.install"     => [qw(n)],
+       "application/vnd.nokia.radio-preset-gage"          => [qw(rpst)],
+       "application/vnd.nokia.radio-presets"                      => [qw(rpss)],
+       "application/vnd.novadigm.edm"                             => [qw(edm)],
+       "application/vnd.novadigm.edx"                             => [qw(edx)],
+       "application/vnd.novadigm.ext"                             => [qw(ext)],
+       "application/vnd.oasis.opendocument.chart"                 => [qw(odc)],
+       "application/vnd.oasis.opendocument.chart-template"        => [qw(otc)],
+       "application/vnd.oasis.opendocument.database"              => [qw(odb)],
+       "application/vnd.oasis.opendocument.formula"               => [qw(odf)],
+       "application/vnd.oasis.opendocument.formula-template"      => [qw(odft)],
+       "application/vnd.oasis.opendocument.graphics"              => [qw(odg)],
+       "application/vnd.oasis.opendocument.graphics-template"     => [qw(otg)],
+       "application/vnd.oasis.opendocument.image"                 => [qw(odi)],
+       "application/vnd.oasis.opendocument.image-template"        => [qw(oti)],
+       "application/vnd.oasis.opendocument.presentation"          => [qw(odp)],
+       "application/vnd.oasis.opendocument.presentation-template" => [qw(otp)],
+       "application/vnd.oasis.opendocument.spreadsheet"           => [qw(ods)],
+       "application/vnd.oasis.opendocument.spreadsheet-template"  => [qw(ots)],
+       "application/vnd.oasis.opendocument.text"                  => [qw(odt)],
+       "application/vnd.oasis.opendocument.text-master"           => [qw(otm)],
+       "application/vnd.oasis.opendocument.text-template"         => [qw(ott)],
+       "application/vnd.oasis.opendocument.text-web"              => [qw(oth)],
+       "application/vnd.olpc-sugar"                               => [qw(xo)],
+       "application/vnd.oma.dd2+xml"                              => [qw(dd2)],
+       "application/vnd.openofficeorg.extension"                  => [qw(oxt)],
+       "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+         => [qw(pptx)],
+       "application/vnd.openxmlformats-officedocument.presentationml.slide" =>
+         [qw(sldx)],
+       "application/vnd.openxmlformats-officedocument.presentationml.slideshow" =>
+         [qw(ppsx)],
+       "application/vnd.openxmlformats-officedocument.presentationml.template" =>
+         [qw(potx)],
+       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" =>
+         [qw(xlsx)],
+       "application/vnd.openxmlformats-officedocument.spreadsheetml.template" =>
+         [qw(xltx)],
+       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" =>
+         [qw(docx)],
+       "application/vnd.openxmlformats-officedocument.wordprocessingml.template" =>
+         [qw(dotx)],
+       "application/vnd.osgi.dp"                 => [qw(dp)],
+       "application/vnd.palm"                    => [qw(pdb pqa oprc)],
+       "application/vnd.pg.format"               => [qw(str)],
+       "application/vnd.pg.osasli"               => [qw(ei6)],
+       "application/vnd.picsel"                  => [qw(efif)],
+       "application/vnd.pocketlearn"             => [qw(plf)],
+       "application/vnd.powerbuilder6"           => [qw(pbd)],
+       "application/vnd.previewsystems.box"      => [qw(box)],
+       "application/vnd.proteus.magazine"        => [qw(mgz)],
+       "application/vnd.publishare-delta-tree"   => [qw(qps)],
+       "application/vnd.pvi.ptid1"               => [qw(ptid)],
+       "application/vnd.quark.quarkxpress"       => [qw(qxd qxt qwd qwt qxl qxb)],
+       "application/vnd.recordare.musicxml"      => [qw(mxl)],
+       "application/vnd.recordare.musicxml+xml"  => [qw(musicxml)],
+       "application/vnd.rim.cod"                 => [qw(cod)],
+       "application/vnd.rn-realmedia"            => [qw(rm)],
+       "application/vnd.route66.link66+xml"      => [qw(link66)],
+       "application/vnd.seemail"                 => [qw(see)],
+       "application/vnd.sema"                    => [qw(sema)],
+       "application/vnd.semd"                    => [qw(semd)],
+       "application/vnd.semf"                    => [qw(semf)],
+       "application/vnd.shana.informed.formdata" => [qw(ifm)],
+       "application/vnd.shana.informed.formtemplate" => [qw(itp)],
+       "application/vnd.shana.informed.interchange"  => [qw(iif)],
+       "application/vnd.shana.informed.package"      => [qw(ipk)],
+       "application/vnd.simtech-mindmapper"          => [qw(twd twds)],
+       "application/vnd.smaf"                        => [qw(mmf)],
+       "application/vnd.smart.teacher"               => [qw(teacher)],
+       "application/vnd.solent.sdkm+xml"             => [qw(sdkm sdkd)],
+       "application/vnd.spotfire.dxp"                => [qw(dxp)],
+       "application/vnd.spotfire.sfs"                => [qw(sfs)],
+       "application/vnd.stardivision.calc"           => [qw(sdc)],
+       "application/vnd.stardivision.draw"           => [qw(sda)],
+       "application/vnd.stardivision.impress"        => [qw(sdd)],
+       "application/vnd.stardivision.math"           => [qw(smf)],
+       "application/vnd.stardivision.writer"         => [qw(sdw)],
+       "application/vnd.stardivision.writer"         => [qw(vor)],
+       "application/vnd.stardivision.writer-global"  => [qw(sgl)],
+       "application/vnd.sun.xml.calc"                => [qw(sxc)],
+       "application/vnd.sun.xml.calc.template"       => [qw(stc)],
+       "application/vnd.sun.xml.draw"                => [qw(sxd)],
+       "application/vnd.sun.xml.draw.template"       => [qw(std)],
+       "application/vnd.sun.xml.impress"             => [qw(sxi)],
+       "application/vnd.sun.xml.impress.template"    => [qw(sti)],
+       "application/vnd.sun.xml.math"                => [qw(sxm)],
+       "application/vnd.sun.xml.writer"              => [qw(sxw)],
+       "application/vnd.sun.xml.writer.global"       => [qw(sxg)],
+       "application/vnd.sun.xml.writer.template"     => [qw(stw)],
+       "application/vnd.sus-calendar"                => [qw(sus susp)],
+       "application/vnd.svd"                         => [qw(svd)],
+       "application/vnd.symbian.install"             => [qw(sis sisx)],
+       "application/vnd.syncml+xml"                  => [qw(xsm)],
+       "application/vnd.syncml.dm+wbxml"             => [qw(bdm)],
+       "application/vnd.syncml.dm+xml"               => [qw(xdm)],
+       "application/vnd.tao.intent-module-archive"   => [qw(tao)],
+       "application/vnd.tmobile-livetv"              => [qw(tmo)],
+       "application/vnd.trid.tpt"                    => [qw(tpt)],
+       "application/vnd.triscape.mxs"                => [qw(mxs)],
+       "application/vnd.trueapp"                     => [qw(tra)],
+       "application/vnd.ufdl"                        => [qw(ufd ufdl)],
+       "application/vnd.uiq.theme"                   => [qw(utz)],
+       "application/vnd.umajin"                      => [qw(umj)],
+       "application/vnd.unity"                       => [qw(unityweb)],
+       "application/vnd.uoml+xml"                    => [qw(uoml)],
+       "application/vnd.vcx"                         => [qw(vcx)],
+       "application/vnd.visio"                       => [qw(vsd vst vss vsw)],
+       "application/vnd.visionary"                   => [qw(vis)],
+       "application/vnd.vsf"                         => [qw(vsf)],
+       "application/vnd.wap.wbxml"                   => [qw(wbxml)],
+       "application/vnd.wap.wmlc"                    => [qw(wmlc)],
+       "application/vnd.wap.wmlscriptc"              => [qw(wmlsc)],
+       "application/vnd.webturbo"                    => [qw(wtb)],
+       "application/vnd.wordperfect"                 => [qw(wpd)],
+       "application/vnd.wqd"                         => [qw(wqd)],
+       "application/vnd.wt.stf"                      => [qw(stf)],
+       "application/vnd.xara"                        => [qw(xar)],
+       "application/vnd.xfdl"                        => [qw(xfdl)],
+       "application/vnd.yamaha.hv-dic"               => [qw(hvd)],
+       "application/vnd.yamaha.hv-script"            => [qw(hvs)],
+       "application/vnd.yamaha.hv-voice"             => [qw(hvp)],
+       "application/vnd.yamaha.openscoreformat"      => [qw(osf)],
+       "application/vnd.yamaha.openscoreformat.osfpvg+xml" => [qw(osfpvg)],
+       "application/vnd.yamaha.smaf-audio"                 => [qw(saf)],
+       "application/vnd.yamaha.smaf-phrase"                => [qw(spf)],
+       "application/vnd.yellowriver-custom-menu"           => [qw(cmp)],
+       "application/vnd.zul"                               => [qw(zir zirz)],
+       "application/vnd.zzazz.deck+xml"                    => [qw(zaz)],
+       "application/voicexml+xml"                          => [qw(vxml)],
+       "application/winhlp"                                => [qw(hlp)],
+       "application/wsdl+xml"                              => [qw(wsdl)],
+       "application/wspolicy+xml"                          => [qw(wspolicy)],
+       "application/x-abiword"                             => [qw(abw)],
+       "application/x-ace-compressed"                      => [qw(ace)],
+       "application/x-authorware-bin" => [qw(aab x32 u32 vox)],
+       "application/x-authorware-map" => [qw(aam)],
+       "application/x-authorware-seg" => [qw(aas)],
+       "application/x-bcpio"          => [qw(bcpio)],
+       "application/x-bittorrent"     => [qw(torrent)],
+       "application/x-bzip"           => [qw(bz)],
+       "application/x-bzip2"          => [qw(bz2 boz)],
+       "application/x-cdlink"         => [qw(vcd)],
+       "application/x-chat"           => [qw(chat)],
+       "application/x-chess-pgn"      => [qw(pgn)],
+       "application/x-cpio"           => [qw(cpio)],
+       "application/x-csh"            => [qw(csh)],
+       "application/x-debian-package" => [qw(deb udeb)],
+       "application/x-director"       => [qw(dir dcr dxr cst cct cxt w3d fgd swa)],
+       "application/x-doom"           => [qw(wad)],
+       "application/x-dtbncx+xml"     => [qw(ncx)],
+       "application/x-dtbook+xml"     => [qw(dtb)],
+       "application/x-dtbresource+xml"    => [qw(res)],
+       "application/x-dvi"                => [qw(dvi)],
+       "application/x-font-bdf"           => [qw(bdf)],
+       "application/x-font-ghostscript"   => [qw(gsf)],
+       "application/x-font-linux-psf"     => [qw(psf)],
+       "application/x-font-otf"           => [qw(otf)],
+       "application/x-font-pcf"           => [qw(pcf)],
+       "application/x-font-snf"           => [qw(snf)],
+       "application/x-font-ttf"           => [qw(ttf ttc)],
+       "application/x-font-type1"         => [qw(pfa pfb pfm afm)],
+       "application/x-futuresplash"       => [qw(spl)],
+       "application/x-gnumeric"           => [qw(gnumeric)],
+       "application/x-gtar"               => [qw(gtar)],
+       "application/x-hdf"                => [qw(hdf)],
+       "application/x-java-jnlp-file"     => [qw(jnlp)],
+       "application/x-latex"              => [qw(latex)],
+       "application/x-mobipocket-ebook"   => [qw(prc mobi)],
+       "application/x-ms-wmd"             => [qw(wmd)],
+       "application/x-ms-wmz"             => [qw(wmz)],
+       "application/x-msaccess"           => [qw(mdb)],
+       "application/x-msbinder"           => [qw(obd)],
+       "application/x-mscardfile"         => [qw(crd)],
+       "application/x-msclip"             => [qw(clp)],
+       "application/x-msdownload"         => [qw(exe dll com bat msi)],
+       "application/x-msmediaview"        => [qw(mvb m13 m14)],
+       "application/x-msmetafile"         => [qw(wmf)],
+       "application/x-msmoney"            => [qw(mny)],
+       "application/x-mspublisher"        => [qw(pub)],
+       "application/x-msschedule"         => [qw(scd)],
+       "application/x-msterminal"         => [qw(trm)],
+       "application/x-mswrite"            => [qw(wri)],
+       "application/x-netcdf"             => [qw(nc cdf)],
+       "application/x-pkcs12"             => [qw(p12 pfx)],
+       "application/x-pkcs7-certificates" => [qw(p7b spc)],
+       "application/x-pkcs7-certreqresp"  => [qw(p7r)],
+       "application/x-rar-compressed"     => [qw(rar)],
+       "application/x-sh"                 => [qw(sh)],
+       "application/x-shar"               => [qw(shar)],
+       "application/x-shockwave-flash"    => [qw(swf)],
+       "application/x-stuffit"            => [qw(sit)],
+       "application/x-stuffitx"           => [qw(sitx)],
+       "application/x-sv4cpio"            => [qw(sv4cpio)],
+       "application/x-sv4crc"             => [qw(sv4crc)],
+       "application/x-tar"                => [qw(tar)],
+       "application/x-tcl"                => [qw(tcl)],
+       "application/x-tex"                => [qw(tex)],
+       "application/x-tex-tfm"            => [qw(tfm)],
+       "application/x-texinfo"            => [qw(texinfo texi)],
+       "application/x-ustar"              => [qw(ustar)],
+       "application/x-wais-source"        => [qw(src)],
+       "application/x-x509-ca-cert"       => [qw(der crt)],
+       "application/x-xfig"               => [qw(fig)],
+       "application/x-xpinstall"          => [qw(xpi)],
+       "application/xenc+xml"             => [qw(xenc)],
+       "application/xhtml+xml"            => [qw(xhtml xht)],
+       "application/xml"                  => [qw(xml xsl)],
+       "application/xml-dtd"              => [qw(dtd)],
+       "application/xop+xml"              => [qw(xop)],
+       "application/xslt+xml"             => [qw(xslt)],
+       "application/xspf+xml"             => [qw(xspf)],
+       "application/xv+xml"               => [qw(mxml xhvml xvml xvm)],
+       "application/zip"                  => [qw(zip)],
+       "audio/adpcm"                      => [qw(adp)],
+       "audio/basic"                      => [qw(au snd)],
+       "audio/midi"                       => [qw(mid midi kar rmi)],
+       "audio/mp4"                        => [qw(mp4a)],
+       "audio/mpeg"                       => [qw(mpga mp2 mp2a mp3 m2a m3a)],
+       "audio/ogg"                        => [qw(oga ogg spx)],
+       "audio/vnd.digital-winds"          => [qw(eol)],
+       "audio/vnd.dts"                    => [qw(dts)],
+       "audio/vnd.dts.hd"                 => [qw(dtshd)],
+       "audio/vnd.lucent.voice"           => [qw(lvp)],
+       "audio/vnd.ms-playready.media.pya" => [qw(pya)],
+       "audio/vnd.nuera.ecelp4800"        => [qw(ecelp4800)],
+       "audio/vnd.nuera.ecelp7470"        => [qw(ecelp7470)],
+       "audio/vnd.nuera.ecelp9600"        => [qw(ecelp9600)],
+       "audio/wav"                        => [qw(wav)],
+       "audio/x-aac"                      => [qw(aac)],
+       "audio/x-aiff"                     => [qw(aif aiff aifc)],
+       "audio/x-mpegurl"                  => [qw(m3u)],
+       "audio/x-ms-wax"                   => [qw(wax)],
+       "audio/x-ms-wma"                   => [qw(wma)],
+       "audio/x-pn-realaudio"             => [qw(ram ra)],
+       "audio/x-pn-realaudio-plugin"      => [qw(rmp)],
+       "audio/x-wav"                      => [qw(wav)],
+       "chemical/x-cdx"                   => [qw(cdx)],
+       "chemical/x-cif"                   => [qw(cif)],
+       "chemical/x-cmdf"                  => [qw(cmdf)],
+       "chemical/x-cml"                   => [qw(cml)],
+       "chemical/x-csml"                  => [qw(csml)],
+       "chemical/x-pdb"                   => [qw(pdb)],
+       "chemical/x-xyz"                   => [qw(xyz)],
+       "image/bmp"                        => [qw(bmp)],
+       "image/cgm"                        => [qw(cgm)],
+       "image/g3fax"                      => [qw(g3)],
+       "image/gif"                        => [qw(gif)],
+       "image/ief"                        => [qw(ief)],
+       "image/jpeg"                       => [qw(jpeg jpg jpe)],
+       "image/png"                        => [qw(png)],
+       "image/prs.btif"                   => [qw(btif)],
+       "image/svg+xml"                    => [qw(svg svgz)],
+       "image/tiff"                       => [qw(tiff tif)],
+       "image/vnd.adobe.photoshop"        => [qw(psd)],
+       "image/vnd.djvu"                   => [qw(djvu djv)],
+       "image/vnd.dwg"                    => [qw(dwg)],
+       "image/vnd.dxf"                    => [qw(dxf)],
+       "image/vnd.fastbidsheet"           => [qw(fbs)],
+       "image/vnd.fpx"                    => [qw(fpx)],
+       "image/vnd.fst"                    => [qw(fst)],
+       "image/vnd.fujixerox.edmics-mmr"   => [qw(mmr)],
+       "image/vnd.fujixerox.edmics-rlc"   => [qw(rlc)],
+       "image/vnd.ms-modi"                => [qw(mdi)],
+       "image/vnd.net-fpx"                => [qw(npx)],
+       "image/vnd.wap.wbmp"               => [qw(wbmp)],
+       "image/vnd.xiff"                   => [qw(xif)],
+       "image/x-cmu-raster"               => [qw(ras)],
+       "image/x-cmx"                      => [qw(cmx)],
+       "image/x-freehand"                 => [qw(fh fhc fh4 fh5 fh7)],
+       "image/x-icon"                     => [qw(ico)],
+       "image/x-pcx"                      => [qw(pcx)],
+       "image/x-pict"                     => [qw(pic pct)],
+       "image/x-portable-anymap"          => [qw(pnm)],
+       "image/x-portable-bitmap"          => [qw(pbm)],
+       "image/x-portable-graymap"         => [qw(pgm)],
+       "image/x-portable-pixmap"          => [qw(ppm)],
+       "image/x-rgb"                      => [qw(rgb)],
+       "image/x-xbitmap"                  => [qw(xbm)],
+       "image/x-xpixmap"                  => [qw(xpm)],
+       "image/x-xwindowdump"              => [qw(xwd)],
+       "message/rfc822"                   => [qw(eml mime)],
+       "model/iges"                       => [qw(igs iges)],
+       "model/mesh"                       => [qw(msh mesh silo)],
+       "model/vnd.dwf"                    => [qw(dwf)],
+       "model/vnd.gdl"                    => [qw(gdl)],
+       "model/vnd.gtw"                    => [qw(gtw)],
+       "model/vnd.mts"                    => [qw(mts)],
+       "model/vnd.vtu"                    => [qw(vtu)],
+       "model/vrml"                       => [qw(wrl vrml)],
+       "text/calendar"                    => [qw(ics ifb)],
+       "text/css"                         => [qw(css)],
+       "text/csv"                         => [qw(csv)],
+       "text/html"                        => [qw(html htm)],
+       "text/plain"                       => [qw(txt text conf def list log in)],
+       "text/prs.lines.tag"               => [qw(dsc)],
+       "text/richtext"                    => [qw(rtx)],
+       "text/sgml"                        => [qw(sgml sgm)],
+       "text/tab-separated-values"        => [qw(tsv)],
+       "text/troff"                       => [qw(t tr roff man me ms)],
+       "text/uri-list"                    => [qw(uri uris urls)],
+       "text/vnd.curl"                    => [qw(curl)],
+       "text/vnd.curl.dcurl"              => [qw(dcurl)],
+       "text/vnd.curl.scurl"              => [qw(scurl)],
+       "text/vnd.curl.mcurl"              => [qw(mcurl)],
+       "text/vnd.fly"                     => [qw(fly)],
+       "text/vnd.fmi.flexstor"            => [qw(flx)],
+       "text/vnd.graphviz"                => [qw(gv)],
+       "text/vnd.in3d.3dml"               => [qw(3dml)],
+       "text/vnd.in3d.spot"               => [qw(spot)],
+       "text/vnd.sun.j2me.app-descriptor" => [qw(jad)],
+       "text/vnd.wap.wml"                 => [qw(wml)],
+       "text/vnd.wap.wmlscript"           => [qw(wmls)],
+       "text/x-asm"                       => [qw(s asm)],
+       "text/x-c"                         => [qw(c cc cxx cpp h hh dic)],
+       "text/x-fortran"                   => [qw(f for f77 f90)],
+       "text/x-pascal"                    => [qw(p pas)],
+       "text/x-java-source"               => [qw(java)],
+       "text/x-setext"                    => [qw(etx)],
+       "text/x-uuencode"                  => [qw(uu)],
+       "text/x-vcalendar"                 => [qw(vcs)],
+       "text/x-vcard"                     => [qw(vcf)],
+       "video/3gpp"                       => [qw(3gp)],
+       "video/3gpp2"                      => [qw(3g2)],
+       "video/h261"                       => [qw(h261)],
+       "video/h263"                       => [qw(h263)],
+       "video/h264"                       => [qw(h264)],
+       "video/jpeg"                       => [qw(jpgv)],
+       "video/jpm"                        => [qw(jpm jpgm)],
+       "video/mj2"                        => [qw(mj2 mjp2)],
+       "video/mp4"                        => [qw(mp4 mp4v mpg4)],
+       "video/mpeg"                       => [qw(mpeg mpg mpe m1v m2v)],
+       "video/ogg"                        => [qw(ogv)],
+       "video/quicktime"                  => [qw(qt mov)],
+       "video/vnd.fvt"                    => [qw(fvt)],
+       "video/vnd.mpegurl"                => [qw(mxu m4u)],
+       "video/vnd.ms-playready.media.pyv" => [qw(pyv)],
+       "video/vnd.vivo"                   => [qw(viv)],
+       "video/x-f4v"                      => [qw(f4v)],
+       "video/x-fli"                      => [qw(fli)],
+       "video/x-flv"                      => [qw(flv)],
+       "video/x-m4v"                      => [qw(m4v)],
+       "video/x-ms-asf"                   => [qw(asf asx)],
+       "video/x-ms-wm"                    => [qw(wm)],
+       "video/x-ms-wmv"                   => [qw(wmv)],
+       "video/x-ms-wmx"                   => [qw(wmx)],
+       "video/x-ms-wvx"                   => [qw(wvx)],
+       "video/x-msvideo"                  => [qw(avi)],
+       "video/x-sgi-movie"                => [qw(movie)],
+       "x-conference/x-cooltalk"          => [qw(ice)],
+   };
+   
+   # parse mime-types for easy detection from memory
+   my $extention = {};
+   foreach my $association (keys %{$mime_types}) {
+      map {
+         $extention->{$_} = $association
+      } @{$mime_types->{$association}};
+   }
    
    sub handle_request
    {
@@ -28,33 +672,30 @@ BEGIN
       
       # static request
       if ($ENV{PATH_INFO} =~ /^\/static/) {
-         my  $ext = $1 if $ENV{PATH_INFO} =~ /(\.\w+$)/;
-         my $ctype = "";
-            $ctype = "text/plain"      if $ext eq ".txt";
-            $ctype = "text/html"       if $ext eq ".html" ||
-                                          $ext eq ".htm";
-            $ctype = "image/gif"       if $ext eq ".gif";
-            $ctype = "image/png"       if $ext eq ".png";
-            $ctype = "image/jpg"       if $ext eq ".jpg" ||
-                                          $ext eq ".jpeg";
-            $ctype = "application/pdf" if $ext eq ".pdf";
-            
+         
+         # find content-type quickly
+         my $file_extention   = $1 if $ENV{PATH_INFO} =~ /\.(\w+$)/;
+         my $content_type     = $extention->{$file_extention};
+         
+         # return static file as text or binary
+         my $return_binary = 1;
+         
          if (-e ".$ENV{PATH_INFO}") {
-            print ok;
+            print OK;
             print $cgi->header(
-               -type   => $ctype,
+               -type   => $content_type,
                -status => 200,
             );
             my $fh = new IO::File "< .$ENV{PATH_INFO}";
             if (defined $fh) {
-               $fh->binmode if $ctype =~ /^image/;
+               $fh->binmode if $return_binary;
                print <$fh>;
                $fh->close;
             }
          }
          else {
             warn "$ENV{PATH_INFO} is being requested but does not exist.";
-            print na;
+            print NOTFOUND;
             print $cgi->header(
                -type   => 'text/html',
                -status => 404,
@@ -65,59 +706,72 @@ BEGIN
       }
       
       # dynamic request
-      my $processing = 1;
       my @return     = ();
-      do
-      {
-         # prepare application
-         my $self = sweet({ local_sessions => 1 });
-         my $app = $self->{store}->{application};
-            $self->routes($r) if $r;
-   
-         # set up mock runtime environment
-         $app->{mock_run}  = 1;
-         $app->{mock_data} = [];
-         $app->{test}->{route} = $ENV{SCRIPT_NAME} = '/.pl';
-   
-         # run application
-         $self->run;
-   
-         push @{ $app->{mock_data} }, @{ $self->html };
-            
-         @return = @{ $app->{mock_data} };
-         
-         $app->{mock_run}      = 0;
-         $app->{mock_data}     = [];
-         
-         # check for redirect
-         if ($return[0] =~ m/^Attempted to redirect to url (.*)\./i) {
-            $ENV{PATH_INFO} = $1;
-            $self->cgi->path_info($1);
-         }
-         else {
-            $processing = 0;
-            print ok;
-            print $self->cgi->header(
-               -type   => $self->application->{content_type},
-               -status => 200,
-               -cookie => $self->cookies
-            );
-            print "@return";
-         }
-         
-      } while ($processing);
       
-      # cleanup - destroy objects for memorys-sake
-      undef $processing;
-      undef @return;
+      # prepare MVC response
+      my $self = sweet({ local_sessions => 1 });
+      my $app  = $self->{store}->{application};
+
+      # set up mock runtime environment
+      $app->{mock_run}      = 1;
+      $app->{mock_data}     = [];
+      $app->{test}->{route} = $ENV{SCRIPT_NAME} = '/.pl';
+
+      # run application
+      if ($main::auto_update) {
+         # reload changed files
+         my $path = $FindBin::Bin . '/sweet/application/Controller';
+         $path =~ s/\\/\//g;
+         foreach my $module (keys %INC) {
+            delete $INC{$module}
+               if $module =~ /^$path/ && $module =~ /\.p(l|m)$/;
+         }
+         delete $INC{'routes.pl'}; # for good measure
+         require  'routes.pl' if -e 'routes.pl';
+         $self->routes($r) if $r;
+         $self->run;
+      }
+      else {
+         $app->{action_discovery} = 0;
+         $self->routes($r) if $r;
+         $self->run;
+      }
+
+      push @{ $app->{mock_data} }, @{ $self->html };
+         
+      @return = @{ $app->{mock_data} };
+      
+      $app->{mock_run}      = 0;
+      $app->{mock_data}     = [];
+      
+      # check for redirect
+      if ($return[0] =~ m/^Attempted to redirect to url (.*)\./i) {
+         print MOVED;
+         print $self->cgi->header(
+            -type       => $self->application->{content_type},
+            -status     => 302,
+            -cookie     => $self->cookies,
+            -location   => $1
+         );
+         return 1;
+      }
+      else {
+         print OK;
+         print $self->cgi->header(
+            -type   => $self->application->{content_type},
+            -status => 200,
+            -cookie => $self->cookies
+         );
+         print "@return";
+         return 1;
+      }
    }
-   
 }
 END
 {
-   
+   # 
 }
 
 # start the server on port 8080
-my $pid = Sweetie->new(8080)->run();
+my $pid = Sweetie->new($http_port)->run();
 print "Use 'kill $pid' or ctrl+c to stop server.\n";
