@@ -9,19 +9,7 @@ use SweetPea::Cli::Flash;
 use SweetPea::Cli::Error;
 use SweetPea::Cli::Help;
 
-=head1 NAME
-
-SweetPea::Cli::Mvc - Model, View, Controller builder for use with SweetPea-Cli
-
-=cut
-
-=head1 METHODS
-
-=head2 new
-
-    Instantiate a new MVC object.
-    
-=cut
+# SweetPea::Cli::Mvc - Model, View, Controller builder for use with SweetPea-Cli
 
 sub new {
     my $class = shift;
@@ -138,23 +126,5 @@ sub _write {
         'bitmask' => $mask
     );
 }
-
-
-=head1 AUTHOR
-
-Al Newkirk, C<< <al.newkirk at awnstudio.commands> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Al Newkirk <al.newkirk@awnstudio.com>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009 Al Newkirk, all rights reserved.
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-=cut
 
 1; # End of SweetPea::Cli::Mvc

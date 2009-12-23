@@ -5,19 +5,7 @@ use strict;
 
 use SweetPea::Cli::Util;
 
-=head1 NAME
-
-SweetPea::Cli::Error - Error handling for SweetPea-Cli.
-
-=cut
-
-=head1 METHODS
-
-=head2 new
-
-    Instantiate a new exception object for SweetPea-Cli.
-
-=cut
+# SweetPea::Cli::Error - Error handling for SweetPea-Cli.
 
 sub new {
     my ($class, $s)     = @_;
@@ -28,12 +16,8 @@ sub new {
     return $self;
 }
 
-=head2 error
-
-    The error method is responsible for storing passed in error messages
-    for later retrieval and rendering.
-
-=cut
+# error# The error method is responsible for storing passed in error messages
+# for later retrieval and rendering.
 
 sub error {
     my $self = shift;
@@ -43,33 +27,24 @@ sub error {
     return $self;
 }
 
-=head2 count
-
-    The count method returns the number of error messages currently
-    existing in the error messages container.
-
-=cut
+# count
+# The count method returns the number of error messages currently
+# existing in the error messages container.
 
 sub count {
     return @{shift->{errors}};
 }
 
-=head2 clear
-
-    The clear method resets the error message container.
-
-=cut
+# clear
+# The clear method resets the error message container.
 
 sub clear {
     shift->{errors} = [];
 }
 
-=head2 report
-
-    The report method is responsible for displaying all stored error
-    messages using the defined message delimiter.
-    
-=cut
+# report
+# The report method is responsible for displaying all stored error
+# messages using the defined message delimiter.
 
 sub report {
     my $self = shift;
@@ -81,11 +56,5 @@ sub report {
         return $u->template('misc/error_string.tt', $c);
     }
 }
-
-=head1 AUTHOR
-
-Al Newkirk, C<< <al.newkirk at awnstudio.com> >>
-
-=cut
 
 1; # End of SweetPea::Cli::Error

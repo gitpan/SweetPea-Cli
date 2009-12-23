@@ -8,19 +8,7 @@ use File::ShareDir ':ALL';
 use File::Util;
 use Template;
 
-=head1 NAME
-
-SweetPea::Cli::Util - Common Functions for SweetPea-Cli
-
-=cut
-
-=head1 METHODS
-
-=head2 new
-
-    Instantiate a new utility object.
-    
-=cut
+# SweetPea::Cli::Util - Common Functions for SweetPea-Cli
 
 sub new {
     my $class = shift;
@@ -29,16 +17,14 @@ sub new {
     return $self;
 }
 
-=head2 template
-
-    Load templates for terminal screen display.
-    Takes 2 args
-    - 1 template (scalar)
-    - 2 stash (hashref)
-    Returns 1 scalar
+# template
+# 
+# Load templates for terminal screen display.
+# Takes 2 args
+# - 1 template (scalar)
+# - 2 stash (hashref)
+# Returns 1 scalar
     
-=cut
-
 sub template {
     my $self      = shift;
     my $file      = shift;
@@ -66,22 +52,5 @@ sub makefile {
     my $f = File::Util->new;
     $f->write_file(@data) unless -e $data[1];
 }
-
-=head1 AUTHOR
-
-Al Newkirk, C<< <al.newkirk at awnstudio.com> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Al Newkirk <al.newkirk@awnstudio.com>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009 Al Newkirk, all rights reserved.
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-=cut
 
 1; # End of SweetPea::Cli::Util

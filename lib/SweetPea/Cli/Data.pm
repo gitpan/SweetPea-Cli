@@ -16,19 +16,7 @@ use SweetPea::Cli::Flash;
 use SweetPea::Cli::Error;
 use SweetPea::Cli::Help;
 
-=head1 NAME
-
-SweetPea::Cli::Data - Data profile builder for use with SweetPea-Cli
-
-=cut
-
-=head1 METHODS
-
-=head2 new
-
-    Instantiate a new Data object.
-    
-=cut
+# SweetPea::Cli::Data - Data profile builder for use with SweetPea-Cli
 
 sub new {
     my $class = shift;
@@ -454,22 +442,4 @@ sub _translate_database_type {
     };
     return $dbt->{lc($dsn)};
 }
-
-=head1 AUTHOR
-
-Al Newkirk, C<< <al.newkirk at awnstudio.com> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Al Newkirk <al.newkirk@awnstudio.com>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009 Al Newkirk, all rights reserved.
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-=cut
-
 1; # End of SweetPea::Cli::Data

@@ -9,11 +9,7 @@ use SweetPea::Cli::Flash;
 use SweetPea::Cli::Error;
 use SweetPea::Cli::Help;
 
-=head1 NAME
-
-SweetPea::Cli::Make - Application builder for use with SweetPea-Cli
-
-=cut
+# SweetPea::Cli::Make - Application builder for use with SweetPea-Cli
 
 my @return = (
     'SweetPea application files were created successfully.',
@@ -27,14 +23,6 @@ my @return = (
     '',
     'Next! Create database data profiles. See help data;'
 );
-
-=head1 METHODS
-
-=head2 new
-
-    Instantiate a new Make object.
-    
-=cut
 
 sub new {
     my $class = shift;
@@ -258,23 +246,6 @@ sub _write {
         'bitmask' => $mask
     );
 }
-
-=head1 AUTHOR
-
-Al Newkirk, C<< <al.newkirk at awnstudio.com> >>
-
-=head1 ACKNOWLEDGEMENTS
-
-Al Newkirk <al.newkirk@awnstudio.com>
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009 Al Newkirk, all rights reserved.
-
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
-
-=cut
 
 1; # End of SweetPea::Cli::Make
 
