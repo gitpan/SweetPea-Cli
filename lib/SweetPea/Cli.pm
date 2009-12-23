@@ -25,29 +25,33 @@ SweetPea::Cli - Rapid Application Development for SweetPea Packages
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 SYNOPSIS
-
-SweetPea::Cli is the new interactive command-line development utility
-intended to replace the original SweetPea application generator script.
-The original application generator script will no longer be packed with
-SweetPea or SweetPea::Application.
 
     ... from the command-line
     sweetpea
     or
     perl -MSweetPea::Cli -e shell
 
-=head1 METHODS
 
-=head2 shell
+=head1 DOCUMENTATION
 
-    Initiate the interactive shell
+=over 4
+
+=item * Detailed Documentation
+
+L<SweetPea::Cli::Documentation>
+
+=item * Live Documentation
+
+L<http://app.alnewkirk.com/pod/projects/sweetpea-cli/>
+
+=back
 
 =cut
 

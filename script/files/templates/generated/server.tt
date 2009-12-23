@@ -720,9 +720,17 @@ BEGIN
       # run application
       if ($main::auto_update) {
          # reload changed files
-         my $path = $FindBin::Bin . '/sweet/application/Controller';
+         my $path = $FindBin::Bin . '/sweet/application';
          $path =~ s/\\/\//g;
          foreach my $module (keys %INC) {
+            my $namespace = $module;
+            if ($namespace =~ /^$path/ && $namespace =~ /\.pm$/) {
+               $namespace =~ s/^$path\/?//;
+               $namespace =~ s/\.pm$//;
+               $namespace =~ s/\//::/g;
+               my $ref = $namespace . "::";
+               undef %$ref if keys %$ref;
+            }
             delete $INC{$module}
                if $module =~ /^$path/ && $module =~ /\.p(l|m)$/;
          }
@@ -732,7 +740,7 @@ BEGIN
          $self->run;
       }
       else {
-         $app->{action_discovery} = 0;
+         $app->{action_discovery} = 1;
          $self->routes($r) if $r;
          $self->run;
       }
